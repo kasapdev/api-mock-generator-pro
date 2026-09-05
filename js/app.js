@@ -432,6 +432,16 @@
     generate();
   }
 
+  function clearAll() {
+    schemaInput.value = '';
+    lastSchema = null;
+    clearOutput();
+    clearError();
+    setStatus('', 'Ready');
+    WUS.store.remove(STORE_KEY);
+    schemaInput.focus();
+  }
+
   /* =================================================================
      PERSISTENCE
      ================================================================= */
@@ -495,6 +505,8 @@
   document.getElementById('btnCopy').addEventListener('click', copyOutput);
   document.getElementById('btnDownload').addEventListener('click', downloadOutput);
   document.getElementById('btnSampleEmpty').addEventListener('click', loadSample);
+  document.getElementById('btnSample').addEventListener('click', loadSample);
+  document.getElementById('btnClear').addEventListener('click', clearAll);
   btnInfer.addEventListener('click', inferAndFill);
 
   tabTypeSpec.addEventListener('click', function () { setMode('typespec'); });

@@ -204,14 +204,24 @@
   var RE_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
   var RE_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-  function inferSpec(value) {
+  function keyHeuristic(keyName) {
+    var k = String(keyName || '');
+    if (/email/i.test(k)) return 'email';
+    if (/^id$|_id$|Id$/.test(k)) return 'uuid';
+    if (/name/i.test(k)) return 'name';
+    if (/(date|_at$|At$|time)/i.test(k)) return 'date';
+    if (/(url|link|website)/i.test(k)) return 'url';
+    return null;
+  }
+
+  function inferSpec(value, keyName) {
     if (Array.isArray(value)) {
       if (value.length === 0) return ['string'];
-      return [inferSpec(value[0])];
+      return [inferSpec(value[0], keyName)];
     }
     if (value !== null && typeof value === 'object') {
       var out = {};
-      Object.keys(value).forEach(function (k) { out[k] = inferSpec(value[k]); });
+      Object.keys(value).forEach(function (k) { out[k] = inferSpec(value[k], k); });
       return out;
     }
     if (typeof value === 'string') {
@@ -220,11 +230,15 @@
       if (RE_URL.test(value)) return 'url';
       if (RE_DATETIME.test(value)) return 'datetime';
       if (RE_DATE.test(value)) return 'date';
-      return 'string';
+      // Value itself doesn't look like a recognizable type — fall back to
+      // a key-name heuristic (a field called "name"/"id"/"date"/"url"...)
+      // before defaulting to a generic string.
+      return keyHeuristic(keyName) || 'string';
     }
     if (typeof value === 'number') return Number.isInteger(value) ? 'number' : 'float';
     if (typeof value === 'boolean') return 'boolean';
-    return 'string';
+    // null / undefined — can't infer from the value alone, try the key name.
+    return keyHeuristic(keyName) || 'string';
   }
 
   /* =================================================================
@@ -374,8 +388,10 @@
       var example = parseSchemaText();
       var spec = inferSpec(example);
       schemaInput.value = JSON.stringify(spec, null, 2);
-      WUS.toast('Inferred type-spec from example');
+      setMode('typespec'); // the textarea now holds a type-spec, not an example
       clearError();
+      WUS.toast('Schema inferred — now editable');
+      generate();
     } catch (err) {
       showError(err.message);
       WUS.toast('Could not infer schema', 'error');
@@ -397,7 +413,7 @@
   /* ------------------------------ Mode -------------------------------- */
   var TYPE_SPEC_SAMPLE = {
     id: 'uuid',
-    name: 'string',
+    name: 'name',
     email: 'email',
     active: 'boolean',
     signupDate: 'date',

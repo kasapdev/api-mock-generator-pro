@@ -531,9 +531,10 @@
   schemaInput.addEventListener('input', persistDebounced);
   countInput.addEventListener('change', persist);
 
-  schemaInput.addEventListener('keydown', function (e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); generate(); }
-  });
+  /* Note: Ctrl/Cmd+Enter while focused in the textarea is handled by the
+     global 'mod+enter' shortcut below (core.js explicitly allows mod-combo
+     shortcuts to fire while typing) — a separate local keydown handler here
+     previously duplicated it, causing generate() to run twice per press. */
 
   WUS.registerShortcut('mod+enter', function () { generate(); }, 'Generate records');
   WUS.registerShortcut('mod+r', function () { regenerate(); }, 'Regenerate');
